@@ -22,7 +22,7 @@ RAW_DATA_PATH = os.path.join(PROJECT_ROOT, "data/raw/cnn_dailymail.csv")
 # RAW_DATA_PATH = "/kaggle/input/hindi-corpus/bookcorpus_english_sample.csv"
 TOKENIZED_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenized.csv")
 SUMMARY_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenised_summarized.csv")
-SUMMARY_CLEANED_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenised_summarized_cleaned.csv")
+# SUMMARY_CLEANED_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenised_summarized_cleaned.csv")
 EMBEDDING_PATH = os.path.join(PROJECT_ROOT, "data/processed/summarized_embeddings.npy")
 GRAPH_PATH = os.path.join(PROJECT_ROOT, "data/knowledge_graph/summary_graph.graphml")
 SUMMARY_GRAPH_PATH = os.path.join(PROJECT_ROOT, "data/knowledge_graph/")
@@ -50,19 +50,18 @@ if __name__ == "__main__":
     summarize_corpus(
         input_path=TOKENIZED_PATH,
         output_path=SUMMARY_PATH,
-        cleaned_path=SUMMARY_CLEANED_PATH,
         chunk_size=chunk_size,
         max_lines=max_line_bound
     )
     print("Summarization Completed")
 
 
-    generate_embeddings(SUMMARY_CLEANED_PATH, EMBEDDING_PATH, max_line_bound)
+    generate_embeddings(SUMMARY_PATH, EMBEDDING_PATH, max_line_bound)
     # test_embeddings(EMBEDDING_PATH)
 
     print("Building Graph")
     build_knowledge_graph(
-        summary_path=SUMMARY_CLEANED_PATH,
+        summary_path=SUMMARY_PATH,
         embedding_path=EMBEDDING_PATH,
         graph_path=GRAPH_PATH,
         top_k=top_k_graph
@@ -73,9 +72,9 @@ if __name__ == "__main__":
     summarize_communities(G, output_path_directory=SUMMARY_GRAPH_PATH)
 
     # query = input("Enter your query: ")
-    print("in dataset: ")
+    print("\nusing BART: ")
     generate_output(top_k_ret, query, "BART", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
-    print("in dataset 2 : ")
-    # generate_output(top_k, query2, "mT5", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
-    print("Not in dataset: ")
+    print("\nusing mT5: ")
+    generate_output(top_k_ret, query, "mT5", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
+    # print("Not in dataset: ")
     # generate_output(top_k, query3, "mT5", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
