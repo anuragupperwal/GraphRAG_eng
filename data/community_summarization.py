@@ -111,7 +111,7 @@ def recursive_summarize(sentences, chunk_size=10, q=10000):
             print("\n\nCHUNK TEXT:", chunk[:300])
             print("Token count:", input_len)
             summary = summarize_with_bart([chunk], max_output_length=max_output_length)[0]
-            print("GENERATED SUMMARY:", summary)
+            # print("GENERATED SUMMARY:", summary)
             current_sentences.append(summary)
 
         # Optional exit condition
@@ -131,7 +131,7 @@ def flat_summarize(sentences, max_chunk_tokens=500, max_output_tokens=256):
         print("\nCHUNK TEXT:", chunk[:300])
         print("Token count:", input_len)
         summary = summarize_with_bart([chunk], max_output_length=max_output_tokens)[0]
-        print("GENERATED SUMMARY:", summary)
+        # print("GENERATED SUMMARY:", summary)
         summaries.append(summary)
     return " ".join(summaries)
 
@@ -173,8 +173,8 @@ def summarize_communities(G, output_path_directory=None):
         summary_text = final_summary if final_summary else "[No summary generated]"
         all_summaries[community_id] = summary_text
 
-        print(f"\n Final summary for Community {community_id}:")
-        print(summary_text)
+        # print(f"\n Final summary for Community {community_id}:")
+        # print(summary_text)
 
     if output_path_directory:
         # os.makedirs(os.path.dirname(output_path), exist_ok=True)

@@ -62,7 +62,7 @@ def sentence_tokenize_text_grouped(sentences):
         sents = [s.strip() for s in sents if s.strip() and is_good_line(s)]
         kept_sentences += len(sents)
         tokenized.append(sents)
-    print(f"Total sentences: {total_sentences}, Kept sentences after cleaning: {kept_sentences}")
+    # print(f"Total sentences: {total_sentences}, Kept sentences after cleaning: {kept_sentences}")
     return tokenized
 
 def preprocess_english_corpus(RAW_DATA_PATH, max_lines=10000, stopwords_path=STOPWORDS_PATH, project_root=None):

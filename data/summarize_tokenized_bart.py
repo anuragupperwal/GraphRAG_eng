@@ -52,7 +52,7 @@ def summarize_chunks(chunks):
 
 
 
-def summarize_corpus(input_path, output_path, cleaned_path, chunk_size=4, max_lines=10000):
+def summarize_corpus(input_path, output_path, chunk_size=4, max_lines=10000):
     """Main callable function to run summarization pipeline."""
     
     print(f"Loading tokenized input from: {input_path}")
@@ -72,8 +72,8 @@ def summarize_corpus(input_path, output_path, cleaned_path, chunk_size=4, max_li
 
     print(f"Summarized data saved to: {output_path}")
 
-    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    clean_summarized_csv(output_path, cleaned_path)
+    # PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # clean_summarized_csv(output_path, cleaned_path)
 
 
 # #Run directly for testing
@@ -82,11 +82,10 @@ if __name__ == "__main__":
 
     TOKENIZED_DATA_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenized.csv")
     SUMMARY_OUTPUT_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenized_summarized.csv")
-    SUMMARY_CLEANED_OUTPUT_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenized_summarized_cleaned.csv")
+    # SUMMARY_CLEANED_OUTPUT_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenized_summarized_cleaned.csv")
     summarize_corpus(
         input_path=TOKENIZED_DATA_PATH,
         output_path=SUMMARY_OUTPUT_PATH,
-        cleaned_path=SUMMARY_CLEANED_OUTPUT_PATH,
         chunk_size=1,
         max_lines=10
     )
