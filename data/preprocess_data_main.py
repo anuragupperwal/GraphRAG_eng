@@ -4,7 +4,7 @@ import re
 import nltk
 from nltk.tokenize import sent_tokenize
 from tqdm import tqdm
-from .download_dataset import download_cnn_dailymail_subset
+# from .download_dataset import download_cnn_dailymail_subset
 
 # === CONFIG ===
 STOPWORDS_PATH = os.path.join(os.path.dirname(__file__), "stopwords-en.txt")
@@ -33,7 +33,7 @@ def basic_english_fix(text):
     text = text.replace(" n't", "n't")
     text = text.replace(" '", "'")
     text = re.sub(r"\s([?.!,'])", r"\1", text)  # remove space before punctuation
-    text = re.sub(r"([a-z]) ([A-Z])", r"\1. \2", text)  # add period if lowercase followed by uppercase
+    # text = re.sub(r"([a-z]) ([A-Z])", r"\1. \2", text)  # add period if lowercase followed by uppercase
     return text
 
 def clean_text(text):
@@ -86,9 +86,14 @@ def preprocess_english_corpus(RAW_DATA_PATH, max_lines=10000, stopwords_path=STO
     # cleaned_texts = [remove_stopwords_english(text, stopwords_set) for text in cleaned_texts]
 
     # Step 4: Sentence tokenization
-    tokenized_sentences = sentence_tokenize_text_grouped(cleaned_texts)
-    joined_sentences = [" ".join(sent_list) for sent_list in tokenized_sentences]
-
+    tks = sentence_tokenize_text_grouped(cleaned_texts)
+    joined_sentences = []
+    for sentence in tks:
+        tokenized_sentences = sentence_tokenize_text_grouped(sentence)
+        for sent_list in tokenized_sentences:
+            joined = " ".join(sent_list)  # join sentences in each document
+            joined_sentences.append(joined)
+            
     # Step 5: Save output
     os.makedirs(os.path.dirname(final_output), exist_ok=True)
     pd.DataFrame({"text": joined_sentences}).to_csv(final_output, index=False, encoding='utf-8')
@@ -96,7 +101,7 @@ def preprocess_english_corpus(RAW_DATA_PATH, max_lines=10000, stopwords_path=STO
     print(f"\n✅ Preprocessing completed! Final tokenized output saved at: {final_output}")
 
 # === Entry Point ===
-# if __name__ == "__main__":
-#     RAW_DATA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "./raw/cnn_dailymail_sample.csv"))
-#     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-#     preprocess_english_corpus(RAW_DATA_PATH, 1000, project_root=project_root)
+if __name__ == "__main__":
+    RAW_DATA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "/raw/cnn_dailymail_sample.csv"))
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    preprocess_english_corpus(RAW_DATA_PATH, 1000, project_root=project_root)

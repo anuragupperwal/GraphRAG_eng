@@ -1,4 +1,5 @@
 import os
+import argparse
 from datasets import load_dataset
 import pandas as pd
 
@@ -20,6 +21,10 @@ def download_cnn_dailymail_subset(output_path, split_percent="5%"):
 
 # === Entry Point ===
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--split_percent", type=str, default="2%", help="Percentage of dataset to load")
+    args = parser.parse_args()
+    split_percent = args.split_percent
     PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     OUTPUT_PATH = os.path.join(PROJECT_ROOT, "data/raw/cnn_dailymail.csv")
-    download_cnn_dailymail_subset(OUTPUT_PATH, split_percent="1%")   # 5% for fast testing
+    download_cnn_dailymail_subset(OUTPUT_PATH, split_percent=split_percent)
