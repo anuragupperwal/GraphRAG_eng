@@ -69,6 +69,7 @@ def preprocess_english_corpus(RAW_DATA_PATH, max_lines=10000, stopwords_path=STO
     """Runs the complete preprocessing pipeline."""
     # Absolute paths
     input1 = RAW_DATA_PATH
+    print("Inside fun: ",input1)
     print("Project root detected as:", project_root)
     final_output = os.path.join(project_root, "data/processed/tokenized.csv")
 
@@ -98,10 +99,10 @@ def preprocess_english_corpus(RAW_DATA_PATH, max_lines=10000, stopwords_path=STO
     os.makedirs(os.path.dirname(final_output), exist_ok=True)
     pd.DataFrame({"text": joined_sentences}).to_csv(final_output, index=False, encoding='utf-8')
     
-    print(f"\n✅ Preprocessing completed! Final tokenized output saved at: {final_output}")
+    print(f"\nPreprocessing completed! Final tokenized output saved at: {final_output}")
 
 # === Entry Point ===
 if __name__ == "__main__":
-    RAW_DATA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "/raw/cnn_dailymail_sample.csv"))
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    RAW_DATA_PATH = os.path.abspath((os.path.dirname(os.path.dirname(__file__), "data/cnn_dailymail_sample.csv")))
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
     preprocess_english_corpus(RAW_DATA_PATH, 1000, project_root=project_root)
