@@ -103,6 +103,6 @@ def preprocess_english_corpus(RAW_DATA_PATH, max_lines=10000, stopwords_path=STO
 
 # === Entry Point ===
 if __name__ == "__main__":
-    RAW_DATA_PATH = os.path.abspath((os.path.dirname(os.path.dirname(__file__), "data/cnn_dailymail_sample.csv")))
+    RAW_DATA_PATH = os.path.abspath((os.path.dirname(os.path.dirname(__file__), "data/raw/monolingual-n/raw_IITB.csv")))
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-    preprocess_english_corpus(RAW_DATA_PATH, 1000, project_root=project_root)
+    preprocess_english_corpus(RAW_DATA_PATH, 1000, project_root=project_root)   

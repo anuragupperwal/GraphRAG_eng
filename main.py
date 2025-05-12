@@ -15,11 +15,11 @@ from data.retrieve_and_generate import generate_output
 
 
 # Get project root dynamically
-# PROJECT_ROOT = "/kaggle/working/"
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW_DATA_PATH = os.path.join(PROJECT_ROOT, "data/raw/cnn_dailymail.csv")
+PROJECT_ROOT = "/kaggle/working/"
+RAW_DATA_PATH = "/kaggle/input/cnndailymail-dataset/cnn_dailymail.csv"
+# PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# RAW_DATA_PATH = os.path.join(PROJECT_ROOT, "data/raw/cnn_dailymail.csv")
 # Define absolute paths
-# RAW_DATA_PATH = "/kaggle/input/hindi-corpus/bookcorpus_english_sample.csv"
 TOKENIZED_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenized.csv")
 SUMMARY_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenised_summarized.csv")
 # SUMMARY_CLEANED_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenised_summarized_cleaned.csv")
