@@ -10,7 +10,6 @@ from data.community_summarization import summarize_communities
 from data.retrieve_and_generate import generate_output
 
 
-# RAW_DATA_PATH = "../../data/raw/monolingual-n/raw_IITB.csv"
 # PROCESSED_OUTPUT_PATH = "data/processed_corpus.csv"
 
 
@@ -71,7 +70,7 @@ if __name__ == "__main__":
     G = nx.read_graphml(GRAPH_PATH)
     summarize_communities(G, output_path_directory=SUMMARY_GRAPH_PATH)
 
-    query = input("Enter your query: ")
+    # query = input("Enter your query: ")
     print("\nusing BART: ")
     generate_output(top_k_ret, query, "BART", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
     # print("\nusing mT5: ")
