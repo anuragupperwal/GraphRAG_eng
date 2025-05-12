@@ -71,10 +71,10 @@ if __name__ == "__main__":
     G = nx.read_graphml(GRAPH_PATH)
     summarize_communities(G, output_path_directory=SUMMARY_GRAPH_PATH)
 
-    # query = input("Enter your query: ")
+    query = input("Enter your query: ")
     print("\nusing BART: ")
     generate_output(top_k_ret, query, "BART", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
-    print("\nusing mT5: ")
-    generate_output(top_k_ret, query, "mT5", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
+    # print("\nusing mT5: ")
+    # generate_output(top_k_ret, query, "mT5", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
     # print("Not in dataset: ")
     # generate_output(top_k, query3, "mT5", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
