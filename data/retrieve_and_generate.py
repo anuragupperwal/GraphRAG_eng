@@ -83,6 +83,7 @@ def load_generator(model_name):
 # Available model options
 GENERATION_MODELS = {
     "BART": "facebook/bart-large-cnn",
+    "BART_finetuned": "finetuned_generator"
 }
 
 def generate_summary(text, tokenizer, model):
@@ -122,12 +123,12 @@ def generate_output(top_k, query, model_name, project_root, summary_path, embedd
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(final_summary)
     
-    if os.path.exists("your_reference_file.csv"):
-        reference = "Driver Gary Babineau: ""I probably had a 30 35foot free fall"" ""The whole bridge from one side of the Mississippi to the other just completely gave way"" ""I literally thought I was dead,"" says driver of a pickup truck that was dangling over the edge of a brokenoff section of the bridge. EMTs and other officials managed to get 55 people into ambulances in less than two hours. ""It was just like out of the movies I just knew what I had to do at the moment,"" says EMT Melissa Hughes 32 of Minneapolis Volunteers. ""I felt that twice I felt that I was going to fall off the bridge,"" says Driver Gary Babinau. ""Theres cars in the water there cars on fire The whole bridge is down,"" says another driver Bernie Toivonen, who was on a part of bridge that ended up tilted at."
-        metrics = evaluate_generation(reference, final_summary)
-        print("\nEvaluation (ROUGE) against reference answer:")
-        for metric, val in metrics.items():
-            print(f"{metric}: {val:.4f}")
+    # if os.path.exists("your_reference_file.csv"):
+    #     reference = "Driver Gary Babineau: ""I probably had a 30 35foot free fall"" ""The whole bridge from one side of the Mississippi to the other just completely gave way"" ""I literally thought I was dead,"" says driver of a pickup truck that was dangling over the edge of a brokenoff section of the bridge. EMTs and other officials managed to get 55 people into ambulances in less than two hours. ""It was just like out of the movies I just knew what I had to do at the moment,"" says EMT Melissa Hughes 32 of Minneapolis Volunteers. ""I felt that twice I felt that I was going to fall off the bridge,"" says Driver Gary Babinau. ""Theres cars in the water there cars on fire The whole bridge is down,"" says another driver Bernie Toivonen, who was on a part of bridge that ended up tilted at."
+    #     metrics = evaluate_generation(reference, final_summary)
+    #     print("\nEvaluation (ROUGE) against reference answer:")
+    #     for metric, val in metrics.items():
+    #         print(f"{metric}: {val:.4f}")
 
 
 if __name__ == "__main__":

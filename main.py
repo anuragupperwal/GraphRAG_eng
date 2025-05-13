@@ -34,6 +34,7 @@ if __name__ == "__main__":
     parser.add_argument("--top_k_graph", type=int, default=5, help="Top K results for graph-based retrieval")
     parser.add_argument("--top_k_ret", type=int, default=5, help="Top K results to retrieve")
     parser.add_argument("--query", type=str, default="Tell me about Michael Jackson concert updates and ticket changes.", help="Query")
+    parser.add_argument("--model_name", type=str, default="BART", help="Model name")
     args = parser.parse_args()
 
     max_line_bound = args.max_line_bound
@@ -41,6 +42,7 @@ if __name__ == "__main__":
     top_k_graph = args.top_k_graph
     top_k_ret = args.top_k_ret
     query = args.query
+    model_name = args.model_name
 
     print("Running preprocessing")
     preprocess_english_corpus(RAW_DATA_PATH, max_lines=max_line_bound, project_root=PROJECT_ROOT)
@@ -72,7 +74,7 @@ if __name__ == "__main__":
 
     # query = input("Enter your query: ")
     print("\nusing BART: ")
-    generate_output(top_k_ret, query, "BART", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
+    generate_output(top_k_ret, query, model_name, PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
     # print("\nusing mT5: ")
     # generate_output(top_k_ret, query, "mT5", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
     # print("Not in dataset: ")
