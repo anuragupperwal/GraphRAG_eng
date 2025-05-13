@@ -210,9 +210,9 @@ def summarize_communities(G, output_path_directory=None):
     # Evaluate using ROUGE
     # rouge_scores = evaluate_summary_quality(all_summaries, reference_dict)
 
-    print("\n--- Community Summary ROUGE Evaluation ---")
-    for metric, score in rouge_scores.items():
-        print(f"{metric}: {score:.4f}") 
+    # print("\n--- Community Summary ROUGE Evaluation ---")
+    # for metric, score in rouge_scores.items():
+    #     print(f"{metric}: {score:.4f}") 
 
 
     return all_summaries
