@@ -15,7 +15,7 @@ model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(device)
 
 
 import pandas as pd
-from datasets import load_metric
+# from datasets import load_metric
 
 def evaluate_rouge_for_summaries(reference_path, prediction_path, reference_col="text", prediction_col="summary", max_rows=None):
     """
@@ -113,8 +113,8 @@ def summarize_corpus(input_path, output_path, chunk_size=4, max_lines=10000):
     print(f"Summarized data saved to: {output_path}")
 
     #Rouge score test for summarisation quality
-    rouge_scores = evaluate_rouge_for_summaries(input_path, output_path)
-    print("ROUGE scores for chunk-level summarization:", rouge_scores)
+    # rouge_scores = evaluate_rouge_for_summaries(input_path, output_path)
+    # print("ROUGE scores for chunk-level summarization:", rouge_scores)
 
     # PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # clean_summarized_csv(output_path, cleaned_path)

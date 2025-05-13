@@ -7,7 +7,7 @@ import networkx as nx
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM
-from evaluate import load as load_metric
+# from evaluate import load as load_metric
 
 
 #Prevents the fork-related deadlock and slowness from huggingface tokenizers
@@ -28,20 +28,20 @@ def clean_chunk(text):
     text = re.sub(r"\s{2,}", " ", text)  # Collapse multiple spaces
     return text.strip()
 
-def evaluate_summary_quality(generated_dict, reference_dict):
-    """
-    Evaluate ROUGE score of generated summaries against references.
-    """
-    rouge = load_metric("rouge")
-    summaries = [generated_dict.get(cid, "") for cid in reference_dict]
-    references = [reference_dict[cid] for cid in reference_dict]
+# def evaluate_summary_quality(generated_dict, reference_dict):
+#     """
+#     Evaluate ROUGE score of generated summaries against references.
+#     """
+#     rouge = load_metric("rouge")
+#     summaries = [generated_dict.get(cid, "") for cid in reference_dict]
+#     references = [reference_dict[cid] for cid in reference_dict]
 
-    rouge_scores = rouge.compute(predictions=summaries, references=references, use_stemmer=True)
-    formatted_rouge = {metric: score for metric, score in rouge_scores.items()}
-    # for metric, score in rouge_scores.items():
-    #     print(f"{metric.upper()} - P: {score['precision']:.4f}, R: {score['recall']:.4f}, F1: {score['fmeasure']:.4f}")
+#     rouge_scores = rouge.compute(predictions=summaries, references=references, use_stemmer=True)
+#     formatted_rouge = {metric: score for metric, score in rouge_scores.items()}
+#     # for metric, score in rouge_scores.items():
+#     #     print(f"{metric.upper()} - P: {score['precision']:.4f}, R: {score['recall']:.4f}, F1: {score['fmeasure']:.4f}")
     
-    return formatted_rouge
+#     return formatted_rouge
 
 
 def summarize_with_bart(texts, max_input_length=1024, max_output_length=512):
@@ -208,7 +208,7 @@ def summarize_communities(G, output_path_directory=None):
         reference_dict[community_id] = " ".join(community_texts)
 
     # Evaluate using ROUGE
-    rouge_scores = evaluate_summary_quality(all_summaries, reference_dict)
+    # rouge_scores = evaluate_summary_quality(all_summaries, reference_dict)
 
     print("\n--- Community Summary ROUGE Evaluation ---")
     for metric, score in rouge_scores.items():
