@@ -19,8 +19,9 @@ def preprocess(example):
     model_inputs["labels"] = labels["input_ids"]
     return model_inputs
 
+
 # Tokenize
-tokenized = dataset.map(preprocess, batched=True)
+tokenized = dataset.map(preprocess, batched=True, remove_columns=dataset.column_names)
 
 # Training arguments
 args = Seq2SeqTrainingArguments(
