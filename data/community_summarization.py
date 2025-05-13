@@ -2,9 +2,12 @@ import os
 import torch
 import re
 import pandas as pd
+import math
+import networkx as nx
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from tqdm import tqdm
-import networkx as nx
+from transformers import AutoModelForCausalLM
+from evaluate import load as load_metric
 
 
 #Prevents the fork-related deadlock and slowness from huggingface tokenizers
@@ -24,6 +27,21 @@ def clean_chunk(text):
     text = re.sub(r"[^\u0900-\u097F\s।.!?]", "", text)  # Remove junk characters
     text = re.sub(r"\s{2,}", " ", text)  # Collapse multiple spaces
     return text.strip()
+
+def evaluate_summary_quality(generated_dict, reference_dict):
+    """
+    Evaluate ROUGE score of generated summaries against references.
+    """
+    rouge = load_metric("rouge")
+    summaries = [generated_dict.get(cid, "") for cid in reference_dict]
+    references = [reference_dict[cid] for cid in reference_dict]
+
+    rouge_scores = rouge.compute(predictions=summaries, references=references, use_stemmer=True)
+    formatted_rouge = {metric: score for metric, score in rouge_scores.items()}
+    # for metric, score in rouge_scores.items():
+    #     print(f"{metric.upper()} - P: {score['precision']:.4f}, R: {score['recall']:.4f}, F1: {score['fmeasure']:.4f}")
+    
+    return formatted_rouge
 
 
 def summarize_with_bart(texts, max_input_length=1024, max_output_length=512):
@@ -111,7 +129,7 @@ def recursive_summarize(sentences, chunk_size=10, q=10000):
             print("\n\nCHUNK TEXT:", chunk[:300])
             print("Token count:", input_len)
             summary = summarize_with_bart([chunk], max_output_length=max_output_length)[0]
-            # print("GENERATED SUMMARY:", summary)
+            print("GENERATED SUMMARY:", summary)
             current_sentences.append(summary)
 
         # Optional exit condition
@@ -131,7 +149,7 @@ def flat_summarize(sentences, max_chunk_tokens=500, max_output_tokens=256):
         print("\nCHUNK TEXT:", chunk[:300])
         print("Token count:", input_len)
         summary = summarize_with_bart([chunk], max_output_length=max_output_tokens)[0]
-        # print("GENERATED SUMMARY:", summary)
+        print("GENERATED SUMMARY:", summary)
         summaries.append(summary)
     return " ".join(summaries)
 
@@ -173,14 +191,29 @@ def summarize_communities(G, output_path_directory=None):
         summary_text = final_summary if final_summary else "[No summary generated]"
         all_summaries[community_id] = summary_text
 
-        # print(f"\n Final summary for Community {community_id}:")
-        # print(summary_text)
+        print(f"\n Final summary for Community {community_id}:")
+        print(summary_text)
 
     if output_path_directory:
         # os.makedirs(os.path.dirname(output_path), exist_ok=True)
         community_summary_path = os.path.join(os.path.dirname(output_path_directory), "community_summary.csv")
         pd.DataFrame.from_dict(all_summaries, orient='index', columns=['summary']).to_csv(community_summary_path)
         print(f"Community summaries saved at: {community_summary_path}")
+
+
+    # Compute references directly from the graph using community groups
+    reference_dict = {}
+    for community_id, node_list in community_groups.items():
+        community_texts = [G.nodes[n]['text'] for n in node_list if G.nodes[n]['text'].strip()]
+        reference_dict[community_id] = " ".join(community_texts)
+
+    # Evaluate using ROUGE
+    rouge_scores = evaluate_summary_quality(all_summaries, reference_dict)
+
+    print("\n--- Community Summary ROUGE Evaluation ---")
+    for metric, score in rouge_scores.items():
+        print(f"{metric}: {score:.4f}") 
+
 
     return all_summaries
 

@@ -14,6 +14,46 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(device)
 
 
+import pandas as pd
+from datasets import load_metric
+
+def evaluate_rouge_for_summaries(reference_path, prediction_path, reference_col="text", prediction_col="summary", max_rows=None):
+    """
+    Computes ROUGE scores between reference texts and generated summaries.
+
+    Parameters:
+    - reference_path (str): Path to the original tokenized CSV.
+    - prediction_path (str): Path to the generated summaries CSV.
+    - reference_col (str): Column name in the reference file. Default is 'text'.
+    - prediction_col (str): Column name in the summary file. Default is 'summary'.
+    - max_rows (int): Optionally limit the number of rows for faster testing.
+
+    Returns:
+    - dict: ROUGE-1, ROUGE-2, ROUGE-L scores
+    """
+    rouge = load_metric("rouge")
+
+    ref_df = pd.read_csv(reference_path, nrows=max_rows)
+    pred_df = pd.read_csv(prediction_path, nrows=max_rows)
+
+    references = ref_df[reference_col].fillna("").astype(str).tolist()
+    predictions = pred_df[prediction_col].fillna("").astype(str).tolist()
+
+    assert len(references) == len(predictions), "Mismatch in number of rows"
+
+    results = rouge.compute(
+        predictions=predictions,
+        references=references,
+        use_stemmer=True
+    )
+
+    # Format scores nicely
+    formatted_results = {
+        metric: score.mid.fmeasure for metric, score in results.items()
+    }
+
+    return formatted_results
+
 def group_sentences(sentences, chunk_size=5):  
     """Group smaller chunks for summarization."""
     return [" ".join(sentences[i:i+chunk_size]) for i in range(0, len(sentences), chunk_size)]
@@ -71,6 +111,10 @@ def summarize_corpus(input_path, output_path, chunk_size=4, max_lines=10000):
     pd.DataFrame({"summary": final_summaries}).to_csv(output_path, index=False, encoding='utf-8')
 
     print(f"Summarized data saved to: {output_path}")
+
+    #Rouge score test for summarisation quality
+    rouge_scores = evaluate_rouge_for_summaries(input_path, output_path)
+    print("ROUGE scores for chunk-level summarization:", rouge_scores)
 
     # PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # clean_summarized_csv(output_path, cleaned_path)
