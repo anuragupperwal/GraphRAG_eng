@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer, util
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-
+from evaluate import load
 
 
 def load_summaries(csv_path):
@@ -94,6 +94,14 @@ def generate_summary(text, tokenizer, model):
    
     return tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
+def test_generation_quality(generated_answers, reference_answers):
+    assert len(generated_answers) == len(reference_answers), "Mismatch in number of generations and references"
+    rouge = load("rouge")
+    results = rouge.compute(predictions=generated_answers, references=reference_answers, use_stemmer=True)
+    print("\n--- Generation Quality (ROUGE) ---")
+    for k, v in results.items():
+        print(f"{k}: {v:.4f}")
+    return results
 
 
 def generate_output(top_k, query, model_name, project_root, summary_path, embedding_path, output_path):
@@ -122,13 +130,7 @@ def generate_output(top_k, query, model_name, project_root, summary_path, embedd
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(final_summary)
-    
-    # if os.path.exists("your_reference_file.csv"):
-    #     reference = "Driver Gary Babineau: ""I probably had a 30 35foot free fall"" ""The whole bridge from one side of the Mississippi to the other just completely gave way"" ""I literally thought I was dead,"" says driver of a pickup truck that was dangling over the edge of a brokenoff section of the bridge. EMTs and other officials managed to get 55 people into ambulances in less than two hours. ""It was just like out of the movies I just knew what I had to do at the moment,"" says EMT Melissa Hughes 32 of Minneapolis Volunteers. ""I felt that twice I felt that I was going to fall off the bridge,"" says Driver Gary Babinau. ""Theres cars in the water there cars on fire The whole bridge is down,"" says another driver Bernie Toivonen, who was on a part of bridge that ended up tilted at."
-    #     metrics = evaluate_generation(reference, final_summary)
-    #     print("\nEvaluation (ROUGE) against reference answer:")
-    #     for metric, val in metrics.items():
-    #         print(f"{metric}: {val:.4f}")
+
 
 
 if __name__ == "__main__":
