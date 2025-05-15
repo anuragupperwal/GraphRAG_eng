@@ -83,7 +83,7 @@ def load_generator(model_name):
 # Available model options
 GENERATION_MODELS = {
     "BART": "facebook/bart-large-cnn",
-    "BART_finetuned": "./finetuned_generator"
+    "BART_finetuned": "/kaggle/working/GraphRAG_eng/data/finetuned_generator"
 }
 
 def generate_summary(text, tokenizer, model):
