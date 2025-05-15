@@ -76,14 +76,14 @@ def get_top_k_similar_summaries(input_paragraph, summaries, embeddings, k=3):
     return " ".join(top_summaries)
 
 def load_generator(model_name):
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, local_files_only=True)
     return tokenizer, model
 
 # Available model options
 GENERATION_MODELS = {
     "BART": "facebook/bart-large-cnn",
-    "BART_finetuned": "finetuned_generator"
+    "BART_finetuned": "./finetuned_generator"
 }
 
 def generate_summary(text, tokenizer, model):
