@@ -53,6 +53,9 @@ def fun():
 
     # Train!
     trainer.train()
+    
+    model.save_pretrained("/kaggle/working/GraghRAG_eng/data/finetuned_generator")
+    tokenizer.save_pretrained("/kaggle/working/GraghRAG_eng/data/finetuned_generator")
 
 
 fun()
