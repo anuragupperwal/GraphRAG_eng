@@ -52,5 +52,5 @@ This will process the data, construct the knowledge graph, and demonstrate retri
 
 ## Contributions
 
-Contributions are welcome! Please fork the repository and submit a pull request with your enhancements.
+Contributions are welcome! Please fork the repository and submit a pull request with your enhancements. 
 
