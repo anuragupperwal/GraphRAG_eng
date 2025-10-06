@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 from src.common.paths import PROJECT_ROOT, RAW_DIR, PROC_DIR, KG_DIR, OUT_DIR
 from src.data.preprocess_data_main import preprocess_english_corpus
-from src.data.summarize_tokenized import summarize_corpus
 from src.data.create_embeddings import generate_embeddings
 from src.data.build_graph import build_knowledge_graph
 from src.data.community_summarization import summarize_communities
@@ -49,12 +48,11 @@ def main():
 
     # File paths
     TOKENIZED = os.path.join(PROC_DIR, "tokenized.csv")
-    SUMMARIZED = os.path.join(PROC_DIR, "tokenized_summarized.csv")
     EMBEDS = os.path.join(PROC_DIR, "summarized_embeddings.npy")
     GRAPH = os.path.join(KG_DIR, "summary_graph.graphml")
     SUMMARY_GRAPH_DIR = KG_DIR
 
-    # 1️-Preprocess raw corpus
+    # 1️⃣ Preprocess raw corpus
     preprocess_english_corpus(
         raw_csv_path=args.raw_csv,
         nrows=args.nrows,
@@ -62,36 +60,33 @@ def main():
         final_output=TOKENIZED
     )
 
-    # # 2️-Long-context summarization via Gemini
-    # summarize_corpus(
-    #     input_path=TOKENIZED,
-    #     output_path=SUMMARIZED,
-    #     batch_size=args.chunk_size
-    # )
+    # 2️⃣ Skip per-document summarization (use cleaned docs directly)
+    print("[Info] Using cleaned documents directly — skipping per-document summaries.")
     source_csv = TOKENIZED
+    content_col = args.text_col  # ✅ define this here explicitly
 
-    # 3️-Generate long-context embeddings
+    # 3️⃣ Generate long-context embeddings
     generate_embeddings(
         INPUT_PATH=source_csv,
         OUTPUT_PATH=EMBEDS,
-        TEXT_COL="text"
+        text_col=content_col  # ✅ lowercase matches your embedding script
     )
 
-    # 4️-Build graph (semantic k-NN + Louvain)
+    # 4️⃣ Build graph (semantic k-NN + Louvain)
     build_knowledge_graph(
-        summary_path=source_csv,  
+        summary_path=source_csv,
         embedding_path=EMBEDS,
         graph_path=GRAPH,
         max_rows=args.nrows,
         top_k=args.top_k_graph,
-        content_col=content_col
+        content_col=content_col  # ✅ now defined
     )
 
-    # 5️-Community summarization (Gemini + Nomic)
+    # 5️⃣ Community summarization (Gemini + Nomic)
     G = nx.read_graphml(GRAPH)
     summarize_communities(G, output_path_directory=SUMMARY_GRAPH_DIR)
 
-    # 6-Retrieval + final answer generation
+    # 6️⃣ Retrieval + final answer generation
     generate_output(
         top_k=args.top_k_ret,
         query=args.query,
@@ -108,13 +103,11 @@ if __name__ == "__main__":
 
 
 
-
-# !python src/main.py \
-#   --raw_csv data/raw/articles.csv \
-#   --text_col article \
-#   --nrows 1000 \
-#   --chunk_size 3 \
-#   --top_k_graph 7 \
-#   --top_k_ret 5 \
-#   --query "Explain the Mississippi Bridge Collapse 2007 and its impact" \
-#   --model_name "gemini-2.5-flash"
+# !python -m src.main \
+# --raw_csv data/raw/articles.csv \
+# --text_col article \
+# --nrows 1000 \
+# --top_k_graph 7 \
+# --top_k_ret 5 \
+# --query "Explain the Mississippi Bridge Collapse 2007 and its impact" \
+# --model_name "gemini-2.5-flash"
