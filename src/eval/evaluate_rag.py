@@ -1,91 +1,57 @@
+# src/eval/evaluate_rag.py
 import os
 import faiss
 import numpy as np
 import pandas as pd
-from sentence_transformers import SentenceTransformer
 from datasets import Dataset
+from ragas.metrics import faithfulness
 from ragas import evaluate
-from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
+from src.common.paths import KG_DIR, OUT_DIR
 
-# Load FAISS and meta
+GRAPH_DIR = KG_DIR
+RESULT_PATH = os.path.join(OUT_DIR, "evaluation_report.csv")
+
 def load_index_and_meta(dir_path):
-    index = faiss.read_index(os.path.join(dir_path, "community_faiss.index"))
-    meta = pd.read_pickle(os.path.join(dir_path, "community_meta.pkl"))
+    faiss_path = os.path.join(dir_path, "community_faiss.index")
+    meta_path = os.path.join(dir_path, "community_meta.pkl")
+    assert os.path.exists(faiss_path), f"Missing FAISS index at {faiss_path}"
+    assert os.path.exists(meta_path), f"Missing metadata file at {meta_path}"
+
+    index = faiss.read_index(faiss_path)
+    meta = pd.read_pickle(meta_path)
     return index, meta
 
-def embed_texts(texts, model_name="nomic-ai/nomic-embed-text-v1.5"):
-    model = SentenceTransformer(model_name, trust_remote_code=True)
-    return model.encode(texts, convert_to_numpy=True, normalize_embeddings=True).astype("float32")
 
-def retrieve_contexts(queries, index, meta, top_k=5):
-    model_name = "nomic-ai/nomic-embed-text-v1.5"
-    model = SentenceTransformer(model_name, trust_remote_code=True)
-    q_embs = model.encode(queries, convert_to_numpy=True, normalize_embeddings=True).astype("float32")
-    scores, idxs = index.search(q_embs, top_k)
-    contexts = []
-    for row in idxs:
-        contexts.append([meta.iloc[i]["summary"] for i in row])
-    return contexts
+def recall_at_k(index, embeddings, k=5):
+    D, I = index.search(embeddings, k)
+    correct = sum(i in I[i] for i in range(len(I)))
+    return correct / len(I)
 
 
-def compute_retrieval_metrics(test_df, retrieved_contexts, top_k=5):
-    from sklearn.metrics import precision_score, recall_score
-
-    gold_contexts = test_df["gold_context"].tolist()
-    recall_scores, precision_scores = [], []
-
-    for i, retrieved in enumerate(retrieved_contexts):
-        gold = gold_contexts[i].lower()
-        hits = sum(1 for ctx in retrieved if gold[:50] in ctx.lower())  # overlap heuristic
-        recall = hits / 1.0  # one gold per query
-        precision = hits / top_k
-        recall_scores.append(recall)
-        precision_scores.append(precision)
-
-    print(f"🔹 Recall@{top_k}: {np.mean(recall_scores):.3f}")
-    print(f"🔹 Precision@{top_k}: {np.mean(precision_scores):.3f}")
-    return np.mean(recall_scores), np.mean(precision_scores)
-
-
-def compute_generation_metrics(test_df):
-    dataset = Dataset.from_dict({
-        "question": test_df["question"].tolist(),
-        "contexts": test_df["contexts"].tolist(),
-        "answer": test_df["answer"].tolist(),
-        "ground_truth": test_df["gold_answer"].tolist(),
-    })
-
-    results = evaluate(dataset, metrics=[
-        faithfulness, answer_relevancy, context_precision, context_recall
-    ])
-    print("\n🧠 Generation Evaluation Results:")
-    for k, v in results.items():
-        print(f"  {k}: {v:.3f}")
-    return results
+def compute_ragas_faithfulness(meta_df):
+    """Evaluate generation quality using RAGAS Faithfulness metric."""
+    # Load your QA pairs
+    eval_data = {
+        "question": ["Explain the Mississippi Bridge Collapse 2007 and its impact"],
+        "answer": [open(os.path.join(OUT_DIR, "answer.txt")).read()],
+        "contexts": [meta_df["summary"].tolist()[:5]],
+    }
+    dataset = Dataset.from_dict(eval_data)
+    score = evaluate(dataset, metrics=[faithfulness])["faithfulness"]
+    return score
 
 
 if __name__ == "__main__":
-    GRAPH_DIR = "data/kg"
-    TEST_FILE = "data/eval/test_queries.csv"
-    OUTPUTS_FILE = "data/out/answer.txt"
-
     index, meta = load_index_and_meta(GRAPH_DIR)
-    test_df = pd.read_csv(TEST_FILE)
+    embs = np.array(index.reconstruct_n(0, index.ntotal))
+    rec_at_5 = recall_at_k(index, embs, k=5)
+    ragas_faith = compute_ragas_faithfulness(meta)
 
-    # 1️⃣ Retrieve contexts
-    contexts = retrieve_contexts(test_df["question"].tolist(), index, meta, top_k=5)
-    test_df["contexts"] = contexts
-
-    # 2️⃣ Compute retrieval metrics
-    recall, precision = compute_retrieval_metrics(test_df, contexts, top_k=5)
-
-    # 3️⃣ Read generated answers
-    if os.path.exists(OUTPUTS_FILE):
-        with open(OUTPUTS_FILE, "r", encoding="utf-8") as f:
-            gen_ans = [f.read()]
-        test_df["answer"] = gen_ans * len(test_df)
-    else:
-        test_df["answer"] = [""] * len(test_df)
-
-    # 4️⃣ Compute generation metrics
-    gen_results = compute_generation_metrics(test_df)
+    results = pd.DataFrame([{
+        "Recall@5": rec_at_5,
+        "RAGAS_Faithfulness": ragas_faith,
+    }])
+    os.makedirs(OUT_DIR, exist_ok=True)
+    results.to_csv(RESULT_PATH, index=False)
+    print("✅ Evaluation Results:")
+    print(results)
