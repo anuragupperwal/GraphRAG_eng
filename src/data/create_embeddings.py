@@ -8,7 +8,7 @@ SUMMARY_MODEL = "nomic-ai/nomic-embed-text-v1.5"
 
 def generate_embeddings(INPUT_PATH, OUTPUT_PATH=None, TEXT_COL="text", nrows=None):
     df = pd.read_csv(INPUT_PATH, nrows=nrows)
-    assert text_col in df.columns, f"Column '{text_col}' not found. Available: {list(df.columns)}"
+    assert TEXT_COL in df.columns, f"Column '{TEXT_COL}' not found. Available: {list(df.columns)}"
     texts = df[TEXT_COL].fillna("").astype(str).tolist()
     print(f"[Info] Encoding {len(texts)} documents using {EMBED_MODEL} ...")
     model = SentenceTransformer(SUMMARY_MODEL, trust_remote_code=True)
