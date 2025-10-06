@@ -1,0 +1,10 @@
+pandas
+numpy
+tqdm
+networkx
+community   # python-louvain
+faiss-cpu
+sentence-transformers
+google-generativeai
+python-dotenv
+transformers

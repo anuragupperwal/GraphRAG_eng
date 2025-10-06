@@ -1,81 +1,112 @@
+# src/main.py
 import os
-import networkx as nx
 import argparse
+import networkx as nx
+from dotenv import load_dotenv
 
-from data.create_embeddings import generate_embeddings, test_embeddings
-from data.preprocess_data_main import preprocess_english_corpus
-from data.summarize_tokenized_bart import summarize_corpus
-from data.build_graph import build_knowledge_graph
-from data.community_summarization import summarize_communities
-from data.retrieve_and_generate import generate_output
+from src.common.paths import PROJECT_ROOT, RAW_DIR, PROC_DIR, KG_DIR, OUT_DIR
+from src.data.preprocess_data_main import preprocess_english_corpus
+from src.data.summarize_tokenized import summarize_corpus
+from src.data.create_embeddings import generate_embeddings
+from src.data.build_graph import build_knowledge_graph
+from src.data.community_summarization import summarize_communities
+from src.data.retrieve_and_generate import generate_output
+
+# Load environment variables (for GOOGLE_API_KEY)
+load_dotenv()
 
 
-# PROCESSED_OUTPUT_PATH = "data/processed_corpus.csv"
+def ensure_dirs():
+    """Make sure all data directories exist."""
+    for d in [RAW_DIR, PROC_DIR, KG_DIR, OUT_DIR]:
+        os.makedirs(d, exist_ok=True)
 
 
-# Get project root dynamically
-PROJECT_ROOT = "/kaggle/working/"
-RAW_DATA_PATH = "/kaggle/input/cnndailymail-dataset/cnn_dailymail.csv"
-# PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# RAW_DATA_PATH = os.path.join(PROJECT_ROOT, "data/raw/cnn_dailymail.csv")
-# Define absolute paths
-TOKENIZED_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenized.csv")
-SUMMARY_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenised_summarized.csv")
-# SUMMARY_CLEANED_PATH = os.path.join(PROJECT_ROOT, "data/processed/tokenised_summarized_cleaned.csv")
-EMBEDDING_PATH = os.path.join(PROJECT_ROOT, "data/processed/summarized_embeddings.npy")
-GRAPH_PATH = os.path.join(PROJECT_ROOT, "data/knowledge_graph/summary_graph.graphml")
-SUMMARY_GRAPH_PATH = os.path.join(PROJECT_ROOT, "data/knowledge_graph/")
-OUTPUT_PATH = os.path.join(PROJECT_ROOT, "data/output/answer.txt")
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run the GraphRAG-Gemini pipeline (Kaggle friendly)")
+    parser.add_argument("--raw_csv", type=str, default=os.path.join(RAW_DIR, "cnn_dailymail.csv"))
+    parser.add_argument("--text_col", type=str, default="article")
+    parser.add_argument("--nrows", type=int, default=3000)
+    parser.add_argument("--chunk_size", type=int, default=3,
+                        help="Batch size for summarization requests to Gemini")
+    parser.add_argument("--top_k_graph", type=int, default=7,
+                        help="Number of nearest neighbors per node in the graph")
+    parser.add_argument("--top_k_ret", type=int, default=5,
+                        help="Number of retrieved summaries for final QA generation")
+    parser.add_argument("--query", type=str, default="Test query")
+    parser.add_argument("--model_name", type=str, default="gemini-2.5-flash")
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    ensure_dirs()
+
+    # File paths
+    TOKENIZED = os.path.join(PROC_DIR, "tokenized.csv")
+    SUMMARIZED = os.path.join(PROC_DIR, "tokenized_summarized.csv")
+    EMBEDS = os.path.join(PROC_DIR, "summarized_embeddings.npy")
+    GRAPH = os.path.join(KG_DIR, "summary_graph.graphml")
+    SUMMARY_GRAPH_DIR = KG_DIR
+
+    # 1️-Preprocess raw corpus
+    preprocess_english_corpus(
+        raw_csv_path=args.raw_csv,
+        nrows=args.nrows,
+        text_col=args.text_col,
+        final_output=TOKENIZED
+    )
+
+    # 2️-Long-context summarization via Gemini
+    summarize_corpus(
+        input_path=TOKENIZED,
+        output_path=SUMMARIZED,
+        batch_size=args.chunk_size
+    )
+
+    # 3️-Generate long-context embeddings
+    generate_embeddings(
+        INPUT_PATH=SUMMARIZED,
+        OUTPUT_PATH=EMBEDS
+    )
+
+    # 4️-Build graph (semantic k-NN + Louvain)
+    build_knowledge_graph(
+        summary_path=SUMMARIZED,
+        embedding_path=EMBEDS,
+        graph_path=GRAPH,
+        max_rows=args.nrows,
+        top_k=args.top_k_graph
+    )
+
+    # 5️-Community summarization (Gemini + Nomic)
+    G = nx.read_graphml(GRAPH)
+    summarize_communities(G, output_path_directory=SUMMARY_GRAPH_DIR)
+
+    # 6-Retrieval + final answer generation
+    generate_output(
+        top_k=args.top_k_ret,
+        query=args.query,
+        model_name=args.model_name,
+        project_root=PROJECT_ROOT,
+        summary_graph_path=SUMMARY_GRAPH_DIR,
+        embedding_path=EMBEDS,
+        output_path=os.path.join(OUT_DIR, "answer.txt")
+    )
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--max_line_bound", type=int, default=5, help="Maximum number of lines per summary chunk")
-    parser.add_argument("--chunk_size", type=int, default=1, help="No. of sentences to chunk for summary")
-    parser.add_argument("--top_k_graph", type=int, default=5, help="Top K results for graph-based retrieval")
-    parser.add_argument("--top_k_ret", type=int, default=5, help="Top K results to retrieve")
-    parser.add_argument("--query", type=str, default="Tell me about Michael Jackson concert updates and ticket changes.", help="Query")
-    parser.add_argument("--model_name", type=str, default="BART", help="Model name")
-    args = parser.parse_args()
-
-    max_line_bound = args.max_line_bound
-    chunk_size = args.chunk_size
-    top_k_graph = args.top_k_graph
-    top_k_ret = args.top_k_ret
-    query = args.query
-    model_name = args.model_name
-
-    print("Running preprocessing")
-    preprocess_english_corpus(RAW_DATA_PATH, max_lines=max_line_bound, project_root=PROJECT_ROOT)
-
-    print("Running summarization")
-    summarize_corpus(
-        input_path=TOKENIZED_PATH,
-        output_path=SUMMARY_PATH,
-        chunk_size=chunk_size,
-        max_lines=max_line_bound
-    )
-    print("Summarization Completed")
+    main()
 
 
-    generate_embeddings(SUMMARY_PATH, EMBEDDING_PATH, max_line_bound)
-    # test_embeddings(EMBEDDING_PATH)
 
-    print("Building Graph")
-    build_knowledge_graph(
-        summary_path=SUMMARY_PATH,
-        embedding_path=EMBEDDING_PATH,
-        graph_path=GRAPH_PATH,
-        top_k=top_k_graph
-    )
 
-    print("Summarizing Communities")
-    G = nx.read_graphml(GRAPH_PATH)
-    summarize_communities(G, output_path_directory=SUMMARY_GRAPH_PATH)
-
-    # query = input("Enter your query: ")
-    print("\nusing BART: ")
-    generate_output(top_k_ret, query, model_name, PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
-    # print("\nusing mT5: ")
-    # generate_output(top_k_ret, query, "mT5", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
-    # print("Not in dataset: ")
-    # generate_output(top_k, query3, "mT5", PROJECT_ROOT, SUMMARY_GRAPH_PATH, EMBEDDING_PATH, OUTPUT_PATH)
+# !python src/main.py \
+#   --raw_csv data/raw/articles.csv \
+#   --text_col article \
+#   --nrows 1000 \
+#   --chunk_size 3 \
+#   --top_k_graph 7 \
+#   --top_k_ret 5 \
+#   --query "Explain the Mississippi Bridge Collapse 2007 and its impact" \
+#   --model_name "gemini-2.5-flash"
