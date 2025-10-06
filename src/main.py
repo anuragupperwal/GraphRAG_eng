@@ -63,7 +63,7 @@ def main():
     # 2️⃣ Skip per-document summarization (use cleaned docs directly)
     print("[Info] Using cleaned documents directly — skipping per-document summaries.")
     source_csv = TOKENIZED
-    content_col = args.text_col  
+    content_col = "text"
 
     # 3️⃣ Generate long-context embeddings
     generate_embeddings(
