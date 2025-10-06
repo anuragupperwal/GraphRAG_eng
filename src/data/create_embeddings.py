@@ -24,7 +24,9 @@ def generate_embeddings(INPUT_PATH, OUTPUT_PATH=None, TEXT_COL="text", nrows=Non
         show_progress_bar=True,
         convert_to_numpy=True,
         normalize_embeddings=True
-    ).astype("float32")if OUTPUT_PATH is None:
+    ).astype("float32")
+    
+    if OUTPUT_PATH is None:
         OUTPUT_PATH = os.path.join(PROC_DIR, "summarized_embeddings.npy")
     np.save(OUTPUT_PATH, embs.astype("float32"))
     print(f"Saved embeddings: {OUTPUT_PATH}, shape={embs.shape}")
