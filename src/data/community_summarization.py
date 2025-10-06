@@ -15,7 +15,7 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 _EMB_MODEL = "nomic-ai/nomic-embed-text-v1.5"   # long-context embedding (16 k)
-_emb_model = SentenceTransformer(_EMB_MODEL)
+_emb_model = SentenceTransformer(_EMB_MODEL, trust_remote_code=True)
 
 
 def _summarize_text_gemini(long_text):

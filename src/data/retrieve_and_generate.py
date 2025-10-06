@@ -18,7 +18,7 @@ def _load_faiss_and_meta(dir_path):
 
 def _embed(texts):
     """Generate embeddings using long-context model."""
-    model = SentenceTransformer(_EMB_MODEL)
+    model = SentenceTransformer(_EMB_MODEL, trust_remote_code=True)
     return model.encode(
         texts, convert_to_numpy=True, normalize_embeddings=True
     ).astype("float32")
