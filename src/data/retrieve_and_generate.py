@@ -3,10 +3,13 @@ import faiss
 import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from src.common.paths import KG_DIR
 from dotenv import load_dotenv
 
-# Load env for Gemini API key
-load_dotenv()
+import google.generativeai as genai
+
+
 
 # Long-context embedding model (16k)
 _EMB_MODEL = "nomic-ai/nomic-embed-text-v1.5"
@@ -17,7 +20,6 @@ def _load_faiss_and_meta(dir_path):
     return index, meta
 
 def _embed(texts):
-    """Generate embeddings using long-context model."""
     model = SentenceTransformer(_EMB_MODEL, trust_remote_code=True)
     return model.encode(
         texts, convert_to_numpy=True, normalize_embeddings=True
@@ -31,10 +33,18 @@ def _retrieve(index, meta_df, query, top_k=5):
     out["score"] = scores[0]
     return out
 
-# ---------------- Gemini answer generation ---------------- #
-def _gen_answer_gemini(context, query):
+
+def _gen_answer(context, query, model_name="gemini-2.5-flash"):
     """Generate a long, detailed answer using Gemini 2.5 Flash."""
-    import google.generativeai as genai
+
+    # Load env for Gemini API key
+    load_dotenv()
+    try:
+        from kaggle_secrets import UserSecretsClient
+        user_secrets = UserSecretsClient()
+        os.environ["GOOGLE_API_KEY"] = user_secrets.get_secret("GOOGLE_API_KEY")
+    except Exception:
+        pass
 
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
@@ -42,7 +52,7 @@ def _gen_answer_gemini(context, query):
         return _gen_answer_local(context, query)
 
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    model = genai.GenerativeModel(model_name)
 
     prompt = (
         "You are an expert assistant working within a retrieval-augmented system.\n"
@@ -58,23 +68,24 @@ def _gen_answer_gemini(context, query):
         print(f"[Gemini error: {e}] Falling back to local model.")
         return _gen_answer_local(context, query)
 
-# ---------------- Local fallback (short-context) ---------------- #
-def _gen_answer_local(context, query, model_name="google/flan-t5-base", max_in=2048, max_out=256):
-    """Fallback generator using FLAN-T5 (if Gemini unavailable)."""
-    import torch
-    from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-    tok = AutoTokenizer.from_pretrained(model_name)
-    mod = AutoModelForSeq2SeqLM.from_pretrained(model_name).to("cuda" if torch.cuda.is_available() else "cpu")
+# # ---------------- Local fallback (short-context) ---------------- #
+# def _gen_answer_local(context, query, model_name="google/flan-t5-base", max_in=2048, max_out=256):
+#     """Fallback generator using FLAN-T5 (if Gemini unavailable)."""
+#     import torch
+#     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-    prompt = (
-        "Answer the question based *only* on the given context.\n"
-        f"Context:\n{context}\n\nQuestion: {query}\nAnswer:"
-    )
-    inputs = tok([prompt], return_tensors="pt", truncation=True, max_length=max_in, padding=True).to(mod.device)
-    with torch.no_grad():
-        out = mod.generate(**inputs, max_length=max_out, num_beams=3)
-    return tok.batch_decode(out, skip_special_tokens=True)[0]
+#     tok = AutoTokenizer.from_pretrained(model_name)
+#     mod = AutoModelForSeq2SeqLM.from_pretrained(model_name).to("cuda" if torch.cuda.is_available() else "cpu")
+
+#     prompt = (
+#         "Answer the question based *only* on the given context.\n"
+#         f"Context:\n{context}\n\nQuestion: {query}\nAnswer:"
+#     )
+#     inputs = tok([prompt], return_tensors="pt", truncation=True, max_length=max_in, padding=True).to(mod.device)
+#     with torch.no_grad():
+#         out = mod.generate(**inputs, max_length=max_out, num_beams=3)
+#     return tok.batch_decode(out, skip_special_tokens=True)[0]
 
 # ---------------- Main orchestration ---------------- #
 def generate_output(top_k, query, model_name, project_root, summary_graph_path, embedding_path, output_path):
@@ -83,9 +94,13 @@ def generate_output(top_k, query, model_name, project_root, summary_graph_path, 
     hits = _retrieve(index, meta, query, top_k=top_k)
     context = "\n\n".join(hits["summary"].tolist())
 
-    ans = _gen_answer_gemini(context, query)
+    ans = _gen_answer(context, query, model_name=model_name)
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(ans)
     print("✅ ANSWER:\n", ans)
+
+
+
+

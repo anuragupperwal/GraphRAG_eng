@@ -1,4 +1,3 @@
-# src/data/community_summarization.py
 import os
 import faiss
 import numpy as np
@@ -12,6 +11,15 @@ from sentence_transformers import SentenceTransformer
 from src.common.paths import KG_DIR
 
 load_dotenv()
+
+# Configure Gemini
+try:
+    from kaggle_secrets import UserSecretsClient
+    import os
+    user_secrets = UserSecretsClient()
+    os.environ["GOOGLE_API_KEY"] = user_secrets.get_secret("GOOGLE_API_KEY")
+except Exception:
+    pass
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 _EMB_MODEL = "nomic-ai/nomic-embed-text-v1.5"   # long-context embedding (16 k)
@@ -22,11 +30,9 @@ def _summarize_text_gemini(long_text):
     """Gemini-based long-context community summarizer."""
     model = genai.GenerativeModel("gemini-2.5-flash")
     prompt = (
-        "You are summarizing a group of related documents (a community) "
-        "for a retrieval-augmented generation system.\n"
-        "Produce a long, detailed, information-dense summary that captures "
-        "every distinct fact and theme from the input, avoiding repetition.\n\n"
-        f"Documents:\n{long_text}\n\nCommunity summary:"
+        "You are summarizing a community of related documents for a Graph-based RAG system.\n"
+        "Write a detailed, information-dense synthesis preserving every distinct fact and event.\n\n"
+        f"Documents:\n{long_text}\n\nCommunity Summary:"
     )
     try:
         response = model.generate_content(prompt)
@@ -46,7 +52,7 @@ def summarize_communities(G: nx.Graph, output_path_directory: str):
     for cid, nodes in tqdm(comm2nodes.items(), desc="Community summarization (Gemini)"):
         deg = nx.degree_centrality(G.subgraph(nodes))
         top_nodes = sorted(nodes, key=lambda n: deg.get(n, 0.0), reverse=True)[:40]
-        texts = [G.nodes[n].get("summary", "") for n in top_nodes]
+        texts = [G.nodes[n].get("content", "") for n in top_nodes]
         joined = " ".join(texts)
         summary = _summarize_text_gemini(joined)
         rows.append({"community": cid, "summary": summary})
@@ -65,3 +71,7 @@ def summarize_communities(G: nx.Graph, output_path_directory: str):
     faiss.write_index(index, os.path.join(output_path_directory, "community_faiss.index"))
     com_df.to_pickle(os.path.join(output_path_directory, "community_meta.pkl"))
     print(f"✅ Saved community summaries + FAISS index to {output_path_directory}")
+
+
+
+

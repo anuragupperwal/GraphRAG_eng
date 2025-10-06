@@ -23,18 +23,23 @@ def ensure_dirs():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run the GraphRAG-Gemini pipeline (Kaggle friendly)")
-    parser.add_argument("--raw_csv", type=str, default=os.path.join(RAW_DIR, "cnn_dailymail.csv"))
-    parser.add_argument("--text_col", type=str, default="article")
-    parser.add_argument("--nrows", type=int, default=3000)
+    parser = argparse.ArgumentParser(description="Run the simplified GraphRAG pipeline (Kaggle friendly)")
+    parser.add_argument("--raw_csv", type=str, default=os.path.join(RAW_DIR, "cnn_dailymail.csv"),
+                        help="Path to input CSV dataset")
+    parser.add_argument("--text_col", type=str, default="article",
+                        help="Column name containing the raw text")
+    parser.add_argument("--nrows", type=int, default=3000,
+                        help="Number of rows to process")
     parser.add_argument("--chunk_size", type=int, default=3,
-                        help="Batch size for summarization requests to Gemini")
+                        help="Batch size for summarization (not used now, kept for compatibility)")
     parser.add_argument("--top_k_graph", type=int, default=7,
                         help="Number of nearest neighbors per node in the graph")
     parser.add_argument("--top_k_ret", type=int, default=5,
-                        help="Number of retrieved summaries for final QA generation")
-    parser.add_argument("--query", type=str, default="Test query")
-    parser.add_argument("--model_name", type=str, default="gemini-2.5-flash")
+                        help="Number of retrieved community summaries for final QA")
+    parser.add_argument("--query", type=str, default="Test query",
+                        help="Question to ask the RAG system")
+    parser.add_argument("--model_name", type=str, default="gemini-2.5-flash",
+                        help="Model used for final answer generation")
     return parser.parse_args()
 
 
@@ -57,17 +62,22 @@ def main():
         final_output=TOKENIZED
     )
 
-    # 2️-Long-context summarization via Gemini
-    summarize_corpus(
-        input_path=TOKENIZED,
-        output_path=SUMMARIZED,
-        batch_size=args.chunk_size
-    )
+    # # 2️-Long-context summarization via Gemini
+    # summarize_corpus(
+    #     input_path=TOKENIZED,
+    #     output_path=SUMMARIZED,
+    #     batch_size=args.chunk_size
+    # )
+
+    print("Using cleaned documents directly — skipping per-document summaries.")
+    source_csv = TOKENIZED
+    content_col = "text"
 
     # 3️-Generate long-context embeddings
     generate_embeddings(
-        INPUT_PATH=SUMMARIZED,
-        OUTPUT_PATH=EMBEDS
+        INPUT_PATH=TOKENIZED,
+        OUTPUT_PATH=EMBEDS,
+        text_col=content_col
     )
 
     # 4️-Build graph (semantic k-NN + Louvain)
