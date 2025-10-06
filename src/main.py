@@ -68,22 +68,23 @@ def main():
     #     output_path=SUMMARIZED,
     #     batch_size=args.chunk_size
     # )
-
+    source_csv = TOKENIZED
 
     # 3️-Generate long-context embeddings
     generate_embeddings(
-        INPUT_PATH=TOKENIZED,
+        INPUT_PATH=source_csv,
         OUTPUT_PATH=EMBEDS,
         TEXT_COL="text"
     )
 
     # 4️-Build graph (semantic k-NN + Louvain)
     build_knowledge_graph(
-        summary_path=SUMMARIZED,
+        summary_path=source_csv,  
         embedding_path=EMBEDS,
         graph_path=GRAPH,
         max_rows=args.nrows,
-        top_k=args.top_k_graph
+        top_k=args.top_k_graph,
+        content_col=content_col
     )
 
     # 5️-Community summarization (Gemini + Nomic)

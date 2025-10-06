@@ -26,7 +26,7 @@ def build_knowledge_graph(summary_path, embedding_path, graph_path, max_rows=300
         nbr_ids = np.argpartition(-sim[i], top_k)[:top_k]
         for j in nbr_ids:
             w = float(sim[i, j])
-            if w >= THRESHOLD:
+            if w >= sim_threshold:
                 G.add_edge(i, j, weight=w)
 
     # Louvain communities
