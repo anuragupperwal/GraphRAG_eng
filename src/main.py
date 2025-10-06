@@ -63,13 +63,13 @@ def main():
     # 2️⃣ Skip per-document summarization (use cleaned docs directly)
     print("[Info] Using cleaned documents directly — skipping per-document summaries.")
     source_csv = TOKENIZED
-    content_col = args.text_col  # ✅ define this here explicitly
+    content_col = args.text_col  
 
     # 3️⃣ Generate long-context embeddings
     generate_embeddings(
         INPUT_PATH=source_csv,
         OUTPUT_PATH=EMBEDS,
-        text_col=content_col  # ✅ lowercase matches your embedding script
+        TEXT_COL=content_col  
     )
 
     # 4️⃣ Build graph (semantic k-NN + Louvain)
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
 
 # !python -m src.main \
-# --raw_csv data/raw/articles.csv \
+# --raw_csv /kaggle/input/cnndailymail-dataset/cnn_dailymail.csv \
 # --text_col article \
 # --nrows 1000 \
 # --top_k_graph 7 \
