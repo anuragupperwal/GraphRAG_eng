@@ -69,15 +69,12 @@ def main():
     #     batch_size=args.chunk_size
     # )
 
-    print("Using cleaned documents directly — skipping per-document summaries.")
-    source_csv = TOKENIZED
-    content_col = "text"
 
     # 3️-Generate long-context embeddings
     generate_embeddings(
         INPUT_PATH=TOKENIZED,
         OUTPUT_PATH=EMBEDS,
-        text_col=content_col
+        TEXT_COL="text"
     )
 
     # 4️-Build graph (semantic k-NN + Louvain)
